@@ -8,7 +8,8 @@ import numpy as np
 from stats import StatisticsManager
 from data import get_dataset
 import scipy
-from dtree import DecisionTree
+#from dtree import DecisionTree
+from ann import ArtificialNeuralNetwork
 '''
 from linear_svm import LinearSupportVectorMachine
 from nbayes import NaiveBayes
@@ -23,11 +24,11 @@ from feature_selection import PCA
 
 
 CLASSIFIERS = {
-    'dtree'                     : DecisionTree,
+    #'dtree'                     : DecisionTree,
     #'linear_svm'                : LinearSupportVectorMachine,
     #'nbayes'                    : NaiveBayes,
     #'logistic_regression'       : LogisticRegression,
-    #'ann'                       : ArtificialNeuralNetwork,
+    'ann'                       : ArtificialNeuralNetwork,
 }
 '''
 META_ALGORITHMS = {
@@ -133,15 +134,11 @@ def main(**options):
     folds = get_folds(X, y, k)
     stats_manager = StatisticsManager()
     #import pdb;pdb.set_trace()
-    #I am keeping track of the maxSize and maxDepth of each of the k tests, to print out at the end
-    maxSize = -1
-    maxDepth = -1
     for train_X, train_y, test_X, test_y in folds:
 
         # Construct classifier instance
         print options
         classifier = get_classifier(**options)
-        classifier.schema = schema
 
         # Train classifier
         train_start = time.time()
@@ -149,25 +146,8 @@ def main(**options):
             selector = FS_ALGORITHMS[fs_alg](n=fs_n)
             selector.fit(train_X)
             train_X = selector.transform(train_X)
-        #Note that I changed fit to take in the schema
-        classifier.fit(train_X, train_y, schema)
+        classifier.fit(train_X, train_y)
         train_time = (train_start - time.time())
-
-        #To see the values and confidences of the root node
-        #for attrVal, child in classifier.treeHead.children.iteritems():
-        #    print "%d with confidence %f" % (attrVal, child.classLabelConfidence)
-
-        #Maintennce to keep track of the maxSize and maxDepth
-        if classifier.size > maxSize:
-            maxSize = classifier.size
-        if classifier.depth > maxDepth:
-            maxDepth = classifier.depth
-
-        #For my testing purposes, I had printed out the train_time
-        #print "train time: %f" % train_time
-        
-        #For spam and voting tests, I printed out the root attribute
-        #print "Root Attribute: [%d] %s" % (classifier.treeHead.attribute, schema.feature_names[classifier.treeHead.attribute])
 
         if fs_alg:
             test_X = selector.transform(test_X)
@@ -180,13 +160,13 @@ def main(**options):
     #The printouts specified by the assignments
     print ('      Accuracy: %.03f %.03f'
         % stats_manager.get_statistic('accuracy', pooled=False))
-    print ('     Precision: %.03f %.03f'
+    """print ('     Precision: %.03f %.03f'
         % stats_manager.get_statistic('precision', pooled=False))
     print ('        Recall: %.03f %.03f'
         % stats_manager.get_statistic('recall', pooled=False))
     print ('Area under ROC: %.03f'
         % stats_manager.get_statistic('auc', pooled=True))
-                
+        """        
 
 
 if __name__ == "__main__":

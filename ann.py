@@ -20,27 +20,23 @@ class ArtificialNeuralNetwork(object):
                             gradient descent for
                             (need at least one of [epsilon, max_iters])
         """
-        pass
-		self.gamma = gamma
-		self.layer_sizes = layer_sizes
-		self.num_hidden = num_hidden
-		self.epsilon = epsilons
-		self.max_iters = max_iters
+        self.gamma = gamma
+        self.layer_sizes = layer_sizes
+        self.num_hidden = num_hidden
+        self.epsilon = epsilon
+        self.max_iters = max_iters
 
-		
-		
-		
-
+        
     def fit(self, X, y, sample_weight=None):
         """ Fit a neural network of layer_sizes * num_hidden hidden units using X, y """
         self.numAttributes = len(X[0])
         self.layers = list()
         self.layers.append(self.buildLowestLayer())
         for i in range(self.layer_sizes - 1):
-        	self.layers.append(self.buildLayer())
+            self.layers.append(self.buildLayer())
         self.outputPerceptron = Perceptron(self.num_hidden)
-        pass
-
+        return
+        
     def predict(self, X):
         """ Return the -1/1 predictions of the decision tree """
         #The list that will hold the predictions
@@ -69,48 +65,49 @@ class ArtificialNeuralNetwork(object):
 
 
     def predict_proba_example(self, example):
-    	self.calc_output(self.outputPerceptron, self.layer_sizes, example)
+        self.calc_output(self.outputPerceptron, self.layer_sizes, example)
 
     def calc_output(self, curPerceptron, curLayer, example):
-    	prevLayer = curLayer - 1
-    	sumOfWXs = 0.0
-    	for i in range(curPeceptron.numInputs):
-    		x = None
-    		if curLayer >= 0:
-    			x = self.calc_output(self.layers[prevLayer][i], prevLayer, example)
-    		else:
-    			x = example[i]
-    		sumOfWXs += x*curPerceptrion.w[i]
-    	return ArtificialNeuralNetwork.sigmoid(sumOfWXs)
+        prevLayer = curLayer - 1
+        sumOfWXs = 0.0
+        for i in range(curPerceptron.numInputs):
+            x = None
+            if curLayer >= 0:
+                x = self.calc_output(self.layers[prevLayer][i], prevLayer, example)
+            else:
+                x = example[i]
+            sumOfWXs += x*curPerceptron.w[i]
+        return ArtificialNeuralNetwork.sigmoid(sumOfWXs)
 
     @staticmethod
     def sigmoid(wx):
-    	return 1 / (1 + np.exp(-wx))
+        return 1 / (1 + np.exp(-wx))
 
     def buildLayer(self):
-    	newLayer = list()
-    	for i in range(self.num_hidden):
-    		newLayer.append(Perceptron(self.num_hidden)
-    	return newLayer
+        newLayer = list()
+        for i in range(self.num_hidden):
+            newLayer.append(Perceptron(self.num_hidden))
+        return newLayer
 
-	def buildLowestLayer(self):
-		self.lowestLayer = list()
-		for i in range(self.num_hidden):
-			self.lowestLayer.append(Perceptron(self.numAttributes, True))
-		return self.lowestLayer
-		
-class Perceptron(object)
+    def buildLowestLayer(self):
+        self.lowestLayer = list()
+        for i in range(self.num_hidden):
+            self.lowestLayer.append(Perceptron(self.numAttributes, True))
+        return self.lowestLayer
+        
+class Perceptron(object):
 
-	def __init__(self, numInputs, isLowest = False):
-		self.isLowest = isLowest
-		self.numInputs = numInputs
-		self.w = Perceptron.generateRandomW(numInputs)
-		
-	@staticmethod
-	def generateRandomW(numInputs):
-		w = list()
-		for i in range(numInputs):
-			randf = np.rand
-			randf = randf / 5
-			randf = randf - 0.1
-			w.append(randf)
+    def __init__(self, numInputs, isLowest = False):
+        self.isLowest = isLowest
+        self.numInputs = numInputs
+        self.w = Perceptron.generateRandomW(numInputs)
+        
+    @staticmethod
+    def generateRandomW(numInputs):
+        w = list()
+        for i in range(numInputs):
+            randf = np.random.random()
+            randf = randf / 5
+            randf = randf - 0.1
+            w.append(randf)
+        return w
