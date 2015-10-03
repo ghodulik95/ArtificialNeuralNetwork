@@ -32,10 +32,35 @@ class ArtificialNeuralNetwork(object):
         self.numAttributes = len(X[0])
         self.layers = list()
         self.layers.append(self.buildLowestLayer())
-        for i in range(self.layer_sizes - 1):
+        for _ in range(self.layer_sizes - 1):
             self.layers.append(self.buildLayer())
         self.outputPerceptron = Perceptron(self.num_hidden)
+
+        for _ in range(self.max_iters):
+            self.updateWeights(X,y,sample_weight)
         return
+
+    def updateWeights(self,X,y,sample_weight=None):
+        dLdWOutput = self.getdLdWOutput(X,y,sample_weight)
+        self.updateOutputWeights(dLdWOutput)
+        return
+
+    def updateOutputWeights(self,dLdW):
+        for i in range(self.outputPerceptron.numInputs):
+            self.outputPerceptron.w[i] += dLdW[i]
+
+    def getdLdWOutput(self,X,y,sample_weight=None):
+        dLdW = list(0.0 for _ in range(self.outputPerceptron.numInputs))
+        for i in range(len(X)):
+            curExample = X[i]
+            curLabel = y[i]
+            hn = self.predict_proba_example(curExample)
+            x = self.calc_xVector(self.outputPerceptron,self.layer_sizes,curExample)
+            for j in range(self.outputPerceptron.numInputs):
+                dLdW[j] += (hn-curLabel)*hn*(1-hn)*x[j]
+        return dLdW
+
+
         
     def predict(self, X):
         """ Return the -1/1 predictions of the decision tree """
@@ -65,19 +90,25 @@ class ArtificialNeuralNetwork(object):
 
 
     def predict_proba_example(self, example):
-        self.calc_output(self.outputPerceptron, self.layer_sizes, example)
+        return self.calc_output(self.outputPerceptron, self.layer_sizes, example)
 
     def calc_output(self, curPerceptron, curLayer, example):
-        prevLayer = curLayer - 1
         sumOfWXs = 0.0
+        x = self.calc_xVector(curPerceptron, curLayer, example)
+        for i in range(curPerceptron.numInputs):
+            sumOfWXs += x[i]*curPerceptron.w[i]
+        return ArtificialNeuralNetwork.sigmoid(sumOfWXs)
+
+    def calc_xVector(self, curPerceptron, curLayer, example):
+        xVector = list()
         for i in range(curPerceptron.numInputs):
             x = None
             if curLayer >= 0:
-                x = self.calc_output(self.layers[prevLayer][i], prevLayer, example)
+                prevLayer = curLayer - 1
+                xVector.append(self.calc_output(self.layers[prevLayer][i], prevLayer, example))
             else:
-                x = example[i]
-            sumOfWXs += x*curPerceptron.w[i]
-        return ArtificialNeuralNetwork.sigmoid(sumOfWXs)
+                xVector.append(example[i])
+        return xVector
 
     @staticmethod
     def sigmoid(wx):

@@ -57,6 +57,10 @@ def get_classifier(**options):
         return CLASSIFIERS[classifier_name](**options)
 
 
+def standardizeX(X):
+    for example in X:
+        np.append(X,[-1])
+
 def get_folds(X, y, k):
     """
     Return a list of stratified folds for cross validation
@@ -66,7 +70,7 @@ def get_folds(X, y, k):
     @param k : number of folds
     @return (train_X, train_y, test_X, test_y) for each fold
     """
-    pass
+    standardizeX(X)
 
     #Make k folds
     folds = [list() for i in range(k)]
