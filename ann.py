@@ -42,12 +42,37 @@ class ArtificialNeuralNetwork(object):
 
     def updateWeights(self,X,y,sample_weight=None):
         dLdWOutput = self.getdLdWOutput(X,y,sample_weight)
+        self.updateHiddenLayer(X,y,dLdWOutput,sample_weight)
         self.updateOutputWeights(dLdWOutput)
         return
 
+    def updateHiddenLayer(self,X,y,dLdWOutput,sample_weight=None):
+        xVectorsByExample = self.getXVectorsByExample(X)
+        for i in range(self.num_hidden):
+            curPerceptron = self.layers[0][i]
+            dLdW = list(0.0 for _ in range(curPerceptron.numInputs))
+            for j in range(len(X)):
+                xVector = xVectorsByExample[j]
+                hn = xVector[i]
+                downstreamDLDW = dLdWOutput[i]
+                for attr in range(len(X[j])):
+                    x = X[j][attr]
+                    #hns cancel
+                    dLdW[attr] += (1-hn)*x*downstreamDLDW*self.outputPerceptron.w[i]
+            for wIndex in range(curPerceptron.numInputs):
+                curPerceptron.w[wIndex] -= 0.01*(dLdW[wIndex] + curPerceptron.w[wIndex]*self.gamma) 
+        return
+
+    def getXVectorsByExample(self, X):
+        toReturn = list()
+        for i in range(len(X)):
+            toReturn.append(self.calc_xVector(self.outputPerceptron,self.layer_sizes,X[i]))
+        return toReturn
+
     def updateOutputWeights(self,dLdW):
         for i in range(self.outputPerceptron.numInputs):
-            self.outputPerceptron.w[i] += dLdW[i]
+            #minus or plus?
+            self.outputPerceptron.w[i] -= 0.01*(dLdW[i] + self.outputPerceptron.w[i]*self.gamma) 
 
     def getdLdWOutput(self,X,y,sample_weight=None):
         dLdW = list(0.0 for _ in range(self.outputPerceptron.numInputs))
@@ -57,7 +82,7 @@ class ArtificialNeuralNetwork(object):
             hn = self.predict_proba_example(curExample)
             x = self.calc_xVector(self.outputPerceptron,self.layer_sizes,curExample)
             for j in range(self.outputPerceptron.numInputs):
-                dLdW[j] += (hn-curLabel)*hn*(1-hn)*x[j]
+                dLdW[j] += (hn-curLabel)*hn*(1-hn)*x[j] 
         return dLdW
 
 

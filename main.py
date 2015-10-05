@@ -60,6 +60,8 @@ def get_classifier(**options):
 def standardizeX(X):
     for example in X:
         np.append(X,[-1])
+    #Shrink range down (to 0 to 1 maybe)
+    #Nominal attributes
 
 def get_folds(X, y, k):
     """
