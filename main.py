@@ -57,11 +57,26 @@ def get_classifier(**options):
         return CLASSIFIERS[classifier_name](**options)
 
 
-def standardizeX(X):
-    for example in X:
-        np.append(X,[-1])
+def standardX(X):
+    toReturn = list()
+    for i in range(len(X)):
+        toReturn.append(np.append(X[i],[-1]))
     #Shrink range down (to 0 to 1 maybe)
     #Nominal attributes
+    return toReturn
+
+def randomize(X,y):
+    for _ in range(len(X)):
+        randInd1 = len(X)*np.random.random()
+        randInd2 = len(X)*np.random.random()
+        tempX = X[randInd1]
+        tempy = y[randInd1]
+        X[randInd1] = X[randInd2]
+        y[randInd1] = y[randInd2]
+        X[randInd2] = tempX
+        y[randInd2] = tempy
+
+
 
 def get_folds(X, y, k):
     """
@@ -72,19 +87,20 @@ def get_folds(X, y, k):
     @param k : number of folds
     @return (train_X, train_y, test_X, test_y) for each fold
     """
-    standardizeX(X)
+    sX = standardX(X)
+    randomize(X,y)
 
     #Make k folds
     folds = [list() for i in range(k)]
     curFold = 0
     #Iterate over every positive class ;abel index, assigning one to each fold and repeating
-    for exampleIndex in filter(lambda x: y[x] == 1 , range(len(X))):
+    for exampleIndex in filter(lambda x: y[x] == 1 , range(len(sX))):
         folds[curFold].append(exampleIndex)
         curFold += 1
         if curFold == k:
             curFold = 0
     #Iterate over every index of not positive class labels, assigning one to each fold and repeating
-    for exampleIndex in filter(lambda x: y[x] != 1 , range(len(X))):
+    for exampleIndex in filter(lambda x: y[x] != 1 , range(len(sX))):
         folds[curFold].append(exampleIndex)
         curFold += 1
         if curFold == k:
@@ -101,7 +117,7 @@ def get_folds(X, y, k):
         cur_test_y = []
         #Add the indexes in the current fold to the test lists
         for exampleIndex in folds[testFold]:
-            cur_test_X.append(X[exampleIndex])
+            cur_test_X.append(sX[exampleIndex])
             cur_test_y.append(y[exampleIndex])
         test_X.append(cur_test_X)
         test_y.append(cur_test_y)
@@ -111,7 +127,7 @@ def get_folds(X, y, k):
         #Add the examples not in the current fold to the train lists
         for foldIndex in filter(lambda x: x != testFold, range(k)):
             for exampleIndex in folds[foldIndex]:
-                cur_train_X.append(X[exampleIndex])
+                cur_train_X.append(sX[exampleIndex])
                 cur_train_y.append(y[exampleIndex])
 
         train_X.append(cur_train_X)
@@ -162,6 +178,7 @@ def main(**options):
         if len(np.shape(scores)) > 1 and np.shape(scores)[1] > 1:
             scores = scores[:,1]    # Get the column for label 1
         stats_manager.add_fold(test_y, predictions, scores, train_time)
+        break
 
     #The printouts specified by the assignments
     print ('      Accuracy: %.03f %.03f'
