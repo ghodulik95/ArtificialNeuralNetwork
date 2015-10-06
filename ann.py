@@ -35,31 +35,29 @@ class ArtificialNeuralNetwork(object):
         self.numAttributes = len(X[0])
         if self.layer_sizes == 0:
             self.hiddenWeights = None
-            self.outputWeights = np.random.uniform(-0.1, 0.1, (self.numAttributes, 1))
+            self.outputWeights = np.random.uniform(-0.1, 0.1, (self.numAttributes))
         else:
             #make random weight matrices
             self.hiddenWeights = np.random.uniform(-0.1, 0.1, (self.num_hidden,self.numAttributes))
-            self.outputWeights = np.random.uniform(-0.1, 0.1, (self.num_hidden, 1))
+            self.outputWeights = np.random.uniform(-0.1, 0.1, (self.num_hidden))
 
-        #for _ in range(self.max_iters):
+        for _ in range(self.max_iters):
             #print self.outputWeights
-            #self.updateWeights(X,y,sample_weight)
+            self.updateWeights(X,y,sample_weight)
         return
 
     def updateWeights(self, X, y, sample_weight=None):
         examples = np.array(X, np.float)
         if self.hiddenWeights is not None:
-            #import pdb;pdb.set_trace()
             hiddenOutputs = self.getAllHiddenOutputs(X) 
+
+            #import pdb;pdb.set_trace()
             #print hiddenOutputs
-            outputs = list(0.0 for _ in range(len(X)))
+            outputs = list()
             for i in range(len(X)):
                 h = hiddenOutputs[i]
-                outputSum = h.dot(self.)
-                for output in h:
-                    outputSum += output
-                #print outputSum
-                outputs[i] = ArtificialNeuralNetwork.sigmoid(outputSum)
+                outputSum = h.dot(self.outputWeights)
+                outputs.append(ArtificialNeuralNetwork.sigmoid(outputSum))
             
             outputUpdates = self.getOutputUpdates(hiddenOutputs, outputs, y)
             #print outputUpdates
@@ -76,9 +74,9 @@ class ArtificialNeuralNetwork(object):
         return toReturn
 
     def getHiddenOutputs(self,curExample):
-        toReturn = np.zeros((1,self.num_hidden),np.float)
+        toReturn = np.zeros((self.num_hidden),np.float)
         for j in range(self.num_hidden):
-            toReturn[0,j] = ArtificialNeuralNetwork.sigmoid(curExample.dot(self.hiddenWeights[j]))
+            toReturn[j] = ArtificialNeuralNetwork.sigmoid(curExample.dot(self.hiddenWeights[j]))
         return toReturn
             
 
@@ -96,20 +94,20 @@ class ArtificialNeuralNetwork(object):
             yi = y[i]
             hn = outputs[i]
             for j in range(self.num_hidden):
-                xji = hiddenOutputs[i,j]
+                xji = hiddenOutputs[i][j]
                 toReturn[j] += (hn - yi)*hn*(1 - hn)*xji
         return toReturn
 
     def getHiddenUpdates(self,hiddenOutputs, outputs, outputUpdates, X):
-        toReturn = np.zeros((self.numAttributes,self.num_hidden),np.float)
+        toReturn = np.zeros((self.num_hidden,self.numAttributes),np.float)
         for i in range(len(X)):
             for j in range(self.numAttributes):
                 xji = X[i][j]
                 for k in range(self.num_hidden):
-                    hn = hiddenOutputs[i,k]
+                    hn = hiddenOutputs[i][k]
                     outputUpdate = outputUpdates[k]
                     outputWeight = self.outputWeights[k]
-                    toReturn[j,k] += (1-hn)*xji*outputUpdate*outputWeight
+                    toReturn[k,j] += (1-hn)*xji*outputUpdate*outputWeight
         return toReturn
 
     def applyUpdates(self, outputUpdates, hiddenUpdates):
@@ -117,7 +115,7 @@ class ArtificialNeuralNetwork(object):
             self.outputWeights[i] -= 0.01*(outputUpdates[i] + self.gamma*self.outputWeights[i])
         for i in range(self.numAttributes):
             for j in range(self.num_hidden):
-                self.hiddenWeights[i,j] -= 0.01*(hiddenUpdates[i,j] + self.gamma*self.hiddenWeights[i,j])
+                self.hiddenWeights[j,i] -= 0.01*(hiddenUpdates[j,i] + self.gamma*self.hiddenWeights[j,i])
         return
 
     def predict(self, X):
