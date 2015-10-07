@@ -95,17 +95,21 @@ def recall(labels, predictions):
 
 def auc(labels, predictions):
     pairs = zip(labels, predictions)
-    pairs.sort(key=lambda x: x[0])
+    pairs.sort(key=lambda x: x[1])
     split = float('-inf')
     oldSplit = None
-    rocVals = list()
+    rocVals = set()
     for i in range(len(pairs)-1):
+        #print "%f    %f" % (oldSplit if oldSplit is not None else 0.0, split)
         if oldSplit != split:
             (fp,tp) = roc(pairs, split)
-            rocVals.append((fp,tp))
+            rocVals.add((fp,tp))
         oldSplit = split
-        split = (pairs[i][0] + pairs[i+1][0])/2
+        split = (pairs[i][1] + pairs[i+1][1])/2
+    rocVals.add(roc(pairs, float('inf')))
+    rocVals = list(rocVals)
     rocVals.sort(key=lambda x: x[0])
+    print rocVals
     area = 0.0
     for i in range(len(rocVals)-1):
         (prevfp, prevtp) = rocVals[i]
@@ -119,7 +123,7 @@ def auc(labels, predictions):
 def roc(pairs, split):
     labels = list()
     predictions = list()
-    for (prediction, label) in pairs:
+    for (label, prediction) in pairs:
         if prediction > split:
             predictions.append(1)
         else:

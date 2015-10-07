@@ -57,10 +57,30 @@ def get_classifier(**options):
         return CLASSIFIERS[classifier_name](**options)
 
 
-def standardX(X):
+def standardX(X, schema):
     toReturn = list()
     for i in range(len(X)):
         toReturn.append(np.append(X[i],[-1]))
+    for i in range(len(X[0])):
+        if schema.is_nominal(i):
+            value_map = {}
+            curNum = 1
+            for val_str in schema.nominal_values[i]:
+                val = int(val_str)
+                value_map[val] = curNum
+                curNum += 1
+            for j in range(len(toReturn)):
+                toReturn[j][i] = value_map[toReturn[j][i]]
+        else:
+            minVal = float('inf')
+            maxVal = float('-inf')
+            for j in range(len(toReturn)):
+                if toReturn[j][i] > maxVal:
+                    maxVal = toReturn[j][i]
+                if toReturn[j][i] < minVal:
+                    minVal = toReturn[j][i]
+            for j in range(len(toReturn)):
+                toReturn[j][i] = (toReturn[j][i] - minVal)/maxVal
     #Shrink range down (to 0 to 1 maybe)
     #Nominal attributes
     return toReturn
@@ -78,7 +98,7 @@ def randomize(X,y):
 
 
 
-def get_folds(X, y, k):
+def get_folds(X, y, k, schema):
     """
     Return a list of stratified folds for cross validation
 
@@ -88,8 +108,8 @@ def get_folds(X, y, k):
     @return (train_X, train_y, test_X, test_y) for each fold
     """
     #import pdb;pdb.set_trace()
-    sX = standardX(X)
-    randomize(sX,y)
+    sX = standardX(X, schema)
+    #randomize(sX,y)
 
     #Make k folds
     folds = [list() for i in range(k)]
@@ -154,7 +174,7 @@ def main(**options):
         fs_n = options.pop("fs_features")
 
     schema, X, y = get_dataset(dataset, dataset_directory)
-    folds = get_folds(X, y, k)
+    folds = get_folds(X, y, k, schema)
     stats_manager = StatisticsManager()
     #import pdb;pdb.set_trace()
     for train_X, train_y, test_X, test_y in folds:
@@ -179,18 +199,17 @@ def main(**options):
         if len(np.shape(scores)) > 1 and np.shape(scores)[1] > 1:
             scores = scores[:,1]    # Get the column for label 1
         stats_manager.add_fold(test_y, predictions, scores, train_time)
-        break
 
     #The printouts specified by the assignments
     print ('      Accuracy: %.03f %.03f'
         % stats_manager.get_statistic('accuracy', pooled=False))
-    """print ('     Precision: %.03f %.03f'
+    print ('     Precision: %.03f %.03f'
         % stats_manager.get_statistic('precision', pooled=False))
     print ('        Recall: %.03f %.03f'
         % stats_manager.get_statistic('recall', pooled=False))
     print ('Area under ROC: %.03f'
         % stats_manager.get_statistic('auc', pooled=True))
-        """        
+                
 
 
 if __name__ == "__main__":

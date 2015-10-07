@@ -3,7 +3,6 @@ The Artificial Neural Network
 """
 import numpy as np
 import scipy
-import math
 
 class ArtificialNeuralNetwork(object):
 
@@ -26,6 +25,7 @@ class ArtificialNeuralNetwork(object):
         self.num_hidden = num_hidden
         self.epsilon = epsilon
         self.max_iters = max_iters
+        self.learningRate = 0.01
         if self.layer_sizes > 1:
             print "Did not design for more than 1 hidden layer."
 
@@ -42,7 +42,6 @@ class ArtificialNeuralNetwork(object):
             self.outputWeights = np.random.uniform(-0.1, 0.1, (self.num_hidden))
 
         for _ in range(self.max_iters):
-            print self.hiddenWeights
             self.updateWeights(X,y,sample_weight)
         return
 
@@ -56,11 +55,12 @@ class ArtificialNeuralNetwork(object):
             #print hiddenOutputs
             #Get all the outputs for the examples
             outputs = list()
-            for i in range(len(X)):
+            for h in hiddenOutputs:
                 h = hiddenOutputs[i]
                 outputSum = np.dot(h,self.outputWeights)
+                #print outputSum
                 outputs.append(ArtificialNeuralNetwork.sigmoid(outputSum))
-            
+            #print outputs            
             outputUpdates = self.getOutputUpdates(hiddenOutputs, outputs, y)
             #print outputUpdates
             hiddenUpdates = self.getHiddenUpdates(hiddenOutputs, outputs, outputUpdates, X)
@@ -108,10 +108,10 @@ class ArtificialNeuralNetwork(object):
 
     def applyUpdates(self, outputUpdates, hiddenUpdates):
         for i in range(self.num_hidden):
-            self.outputWeights[i] -= 0.01*(outputUpdates[i])
+            self.outputWeights[i] -= self.learningRate*(outputUpdates[i])
         for i in range(self.numAttributes):
             for j in range(self.num_hidden):
-                self.hiddenWeights[j,i] -= 0.01*(hiddenUpdates[j,i] + self.gamma*self.hiddenWeights[j,i])
+                self.hiddenWeights[j,i] -= self.learningRate*(hiddenUpdates[j,i] + self.gamma*self.hiddenWeights[j,i])
         return
 
     def predict(self, X):
