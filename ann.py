@@ -42,21 +42,23 @@ class ArtificialNeuralNetwork(object):
             self.outputWeights = np.random.uniform(-0.1, 0.1, (self.num_hidden))
 
         for _ in range(self.max_iters):
-            #print self.outputWeights
+            print self.hiddenWeights
             self.updateWeights(X,y,sample_weight)
         return
 
     def updateWeights(self, X, y, sample_weight=None):
-        examples = np.array(X, np.float)
         if self.hiddenWeights is not None:
+            #Get the outputs of the hidden layer for each example
+            #   hiddenOutputs[i] corresponds to all the outputs of the hidden layer for example i
             hiddenOutputs = self.getAllHiddenOutputs(X) 
 
-            #import pdb;pdb.set_trace()
+            #mport pdb;pdb.set_trace()
             #print hiddenOutputs
+            #Get all the outputs for the examples
             outputs = list()
             for i in range(len(X)):
                 h = hiddenOutputs[i]
-                outputSum = h.dot(self.outputWeights)
+                outputSum = np.dot(h,self.outputWeights)
                 outputs.append(ArtificialNeuralNetwork.sigmoid(outputSum))
             
             outputUpdates = self.getOutputUpdates(hiddenOutputs, outputs, y)
@@ -76,25 +78,19 @@ class ArtificialNeuralNetwork(object):
     def getHiddenOutputs(self,curExample):
         toReturn = np.zeros((self.num_hidden),np.float)
         for j in range(self.num_hidden):
-            toReturn[j] = ArtificialNeuralNetwork.sigmoid(curExample.dot(self.hiddenWeights[j]))
+            toReturn[j] = ArtificialNeuralNetwork.sigmoid(np.dot(curExample,self.hiddenWeights[j]))
         return toReturn
             
 
-    @staticmethod
-    def applySigmoid(matrix):
-        toReturn = np.zeros((len(matrix),len(matrix[0])), np.float)
-        for i in range(len(matrix)):
-            for j in range(len(matrix[0])):
-                toReturn[i,j] = ArtificialNeuralNetwork.sigmoid(matrix[i,j])
-        return toReturn
-
     def getOutputUpdates(self, hiddenOutputs, outputs, y):
-        toReturn = list(0.0 for _ in range(self.num_hidden))
+        toReturn = list(self.gamma*self.outputWeights[i] for i in range(self.num_hidden))
+        #initialize the list to the weight decay terms
         for i in range(len(y)):
             yi = y[i]
             hn = outputs[i]
             for j in range(self.num_hidden):
                 xji = hiddenOutputs[i][j]
+                #print xji
                 toReturn[j] += (hn - yi)*hn*(1 - hn)*xji
         return toReturn
 
@@ -112,7 +108,7 @@ class ArtificialNeuralNetwork(object):
 
     def applyUpdates(self, outputUpdates, hiddenUpdates):
         for i in range(self.num_hidden):
-            self.outputWeights[i] -= 0.01*(outputUpdates[i] + self.gamma*self.outputWeights[i])
+            self.outputWeights[i] -= 0.01*(outputUpdates[i])
         for i in range(self.numAttributes):
             for j in range(self.num_hidden):
                 self.hiddenWeights[j,i] -= 0.01*(hiddenUpdates[j,i] + self.gamma*self.hiddenWeights[j,i])
@@ -125,7 +121,7 @@ class ArtificialNeuralNetwork(object):
         toReturn = list()
         for prob in predictions:
             #If the confidence is above or equal to 0.5, we will predict positive
-            if prob >= 0:
+            if prob > 0.5:
                 toReturn.append(1)
             #Otherwise, predict negative
             else:
@@ -138,60 +134,10 @@ class ArtificialNeuralNetwork(object):
         for i in range(len(X)):
             curExample = X[i]
             hiddenLayerOutputs = self.getHiddenOutputs(curExample)
-            toReturn.append(ArtificialNeuralNetwork.sigmoid(hiddenLayerOutputs.dot(self.outputWeights)))
+            toReturn.append(ArtificialNeuralNetwork.sigmoid(np.dot(hiddenLayerOutputs,self.outputWeights)))
 
         return toReturn
 
-    def predict_proba_example(self, example):
-        return self.calc_output(self.outputPerceptron, self.layer_sizes, example)
-
-    def calc_output(self, curPerceptron, curLayer, example):
-        sumOfWXs = 0.0
-        x = self.calc_xVector(curPerceptron, curLayer, example)
-        for i in range(curPerceptron.numInputs):
-            sumOfWXs += x[i]*curPerceptron.w[i]
-        return ArtificialNeuralNetwork.sigmoid(sumOfWXs)
-
-    def calc_xVector(self, curPerceptron, curLayer, example):
-        xVector = list()
-        for i in range(curPerceptron.numInputs):
-            x = None
-            if curLayer > 0:
-                prevLayer = curLayer - 1
-                xVector.append(self.calc_output(self.layers[prevLayer][i], prevLayer, example))
-            else:
-                xVector.append(example[i])
-        return xVector
-
     @staticmethod
     def sigmoid(wx):
-        return 2*(1 / (1 + np.exp(-wx))) - 1
-
-    def buildLayer(self):
-        newLayer = list()
-        for i in range(self.num_hidden):
-            newLayer.append(Perceptron(self.num_hidden))
-        return newLayer
-
-    def buildLowestLayer(self):
-        self.lowestLayer = list()
-        for i in range(self.num_hidden):
-            self.lowestLayer.append(Perceptron(self.numAttributes, True))
-        return self.lowestLayer
-        
-class Perceptron(object):
-
-    def __init__(self, numInputs, isLowest = False):
-        self.isLowest = isLowest
-        self.numInputs = numInputs
-        self.w = Perceptron.generateRandomW(numInputs)
-        
-    @staticmethod
-    def generateRandomW(numInputs):
-        w = list()
-        for i in range(numInputs):
-            randf = np.random.random()
-            randf = randf / 5
-            randf = randf - 0.1
-            w.append(randf)
-        return w
+        return 1 / (1 + np.exp(-wx))

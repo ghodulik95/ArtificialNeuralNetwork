@@ -67,8 +67,8 @@ def standardX(X):
 
 def randomize(X,y):
     for _ in range(len(X)):
-        randInd1 = len(X)*np.random.random()
-        randInd2 = len(X)*np.random.random()
+        randInd1 = (int)(len(X)*np.random.random())
+        randInd2 = (int)(len(X)*np.random.random())
         tempX = X[randInd1]
         tempy = y[randInd1]
         X[randInd1] = X[randInd2]
@@ -87,8 +87,9 @@ def get_folds(X, y, k):
     @param k : number of folds
     @return (train_X, train_y, test_X, test_y) for each fold
     """
+    #import pdb;pdb.set_trace()
     sX = standardX(X)
-    randomize(X,y)
+    randomize(sX,y)
 
     #Make k folds
     folds = [list() for i in range(k)]
