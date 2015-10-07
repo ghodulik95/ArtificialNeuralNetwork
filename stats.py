@@ -66,10 +66,65 @@ def accuracy(labels, predictions):
     return float(numCorrect)/numTotal
 
 def precision(labels, predictions):
-    pass
+    tp = 0
+    fp = 0
+    for i in range(len(labels)):
+        if predictions[i] == 1:
+            if labels[i] == 1:
+                tp += 1
+            else:
+                fp += 1
+    if tp == 0 and fp == 0:
+        return 0.0
+    else:
+        return float(tp)/(tp+fp)
 
 def recall(labels, predictions):
-    pass
+    tp = 0
+    fn = 0
+    for i in range(len(labels)):
+        if labels[i] == 1:
+            if predictions[i] == 1:
+                tp += 1
+            else:
+                fn += 1
+    if tp == 0 and fn == 0:
+        return 0.0
+    else:
+        return float(tp)/(tp+fn)
 
 def auc(labels, predictions):
-    pass
+    pairs = zip(labels, predictions)
+    pairs.sort(key=lambda x: x[0])
+    split = float('-inf')
+    oldSplit = None
+    rocVals = list()
+    for i in range(len(pairs)-1):
+        if oldSplit != split:
+            (fp,tp) = roc(pairs, split)
+            rocVals.append((fp,tp))
+        oldSplit = split
+        split = (pairs[i][0] + pairs[i+1][0])/2
+    rocVals.sort(key=lambda x: x[0])
+    area = 0.0
+    for i in range(len(rocVals)-1):
+        (prevfp, prevtp) = rocVals[i]
+        (nextfp, nexttp) = rocVals[i+1]
+        h = nextfp - prevfp
+        avg = (prevtp + nexttp)/2
+        area += avg*h
+
+    return area
+
+def roc(pairs, split):
+    labels = list()
+    predictions = list()
+    for (prediction, label) in pairs:
+        if prediction > split:
+            predictions.append(1)
+        else:
+            predictions.append(-1)
+        labels.append(label)
+    tp = recall(labels, predictions)
+    fp = 1 - precision(labels, predictions)
+    return (fp, tp)
