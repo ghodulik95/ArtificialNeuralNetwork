@@ -89,7 +89,7 @@ def get_folds(X, y, k):
     """
     #import pdb;pdb.set_trace()
     sX = standardX(X)
-    randomize(sX,y)
+    #randomize(sX,y)
 
     #Make k folds
     folds = [list() for i in range(k)]
@@ -156,7 +156,6 @@ def main(**options):
     schema, X, y = get_dataset(dataset, dataset_directory)
     folds = get_folds(X, y, k)
     stats_manager = StatisticsManager()
-    #import pdb;pdb.set_trace()
     for train_X, train_y, test_X, test_y in folds:
 
         # Construct classifier instance
@@ -169,28 +168,33 @@ def main(**options):
             selector = FS_ALGORITHMS[fs_alg](n=fs_n)
             selector.fit(train_X)
             train_X = selector.transform(train_X)
-        classifier.fit(train_X, train_y)
+
+        #import pdb;pdb.set_trace()
+        examples = [np.array([1,2,-1]), np.array([2,1,-1])]
+        ys = [1,-1]
+        classifier.fit(examples,ys)#train_X, train_y)
         train_time = (train_start - time.time())
 
         if fs_alg:
             test_X = selector.transform(test_X)
-        predictions = classifier.predict(test_X)
-        scores = classifier.predict_proba(test_X)
+        predictions = classifier.predict(examples)#test_X)
+        scores = classifier.predict_proba(examples)#test_X)
         if len(np.shape(scores)) > 1 and np.shape(scores)[1] > 1:
             scores = scores[:,1]    # Get the column for label 1
-        stats_manager.add_fold(test_y, predictions, scores, train_time)
+        #test_y
+        stats_manager.add_fold(ys, predictions, scores, train_time)
         break
 
     #The printouts specified by the assignments
     print ('      Accuracy: %.03f %.03f'
         % stats_manager.get_statistic('accuracy', pooled=False))
-    """print ('     Precision: %.03f %.03f'
+    print ('     Precision: %.03f %.03f'
         % stats_manager.get_statistic('precision', pooled=False))
     print ('        Recall: %.03f %.03f'
         % stats_manager.get_statistic('recall', pooled=False))
     print ('Area under ROC: %.03f'
         % stats_manager.get_statistic('auc', pooled=True))
-        """        
+               
 
 
 if __name__ == "__main__":

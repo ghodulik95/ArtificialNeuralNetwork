@@ -3,7 +3,6 @@ The Artificial Neural Network
 """
 import numpy as np
 import scipy
-import math
 
 class ArtificialNeuralNetwork(object):
 
@@ -23,27 +22,32 @@ class ArtificialNeuralNetwork(object):
         """
         self.gamma = gamma
         self.layer_sizes = layer_sizes
-        self.num_hidden = num_hidden
+        self.num_hidden = 2#num_hidden
         self.epsilon = epsilon
         self.max_iters = max_iters
+        self.learningRate = 0.01
         if self.layer_sizes > 1:
             print "Did not design for more than 1 hidden layer."
 
         
     def fit(self, X, y, sample_weight=None):
         """ Fit a neural network of layer_sizes * num_hidden hidden units using X, y """
-        self.numAttributes = len(X[0])
+        self.numAttributes = 3#len(X[0])
+        self.numExamples = 2#len(X)
         if self.layer_sizes == 0:
             self.hiddenWeights = None
             self.outputWeights = np.random.uniform(-0.1, 0.1, (self.numAttributes))
         else:
             #make random weight matrices
-            self.hiddenWeights = np.random.uniform(-0.1, 0.1, (self.num_hidden,self.numAttributes))
-            self.outputWeights = np.random.uniform(-0.1, 0.1, (self.num_hidden))
-
+            self.hiddenWeights = np.array([[-0.1, -0.5,1],[0.1, -0.25,1]])#np.random.uniform(-0.1, 0.1, (self.num_hidden,self.numAttributes))
+            self.outputWeights = np.array([1.0, 1.0])#np.random.uniform(-0.1, 0.1, (self.num_hidden))
+        examples = [np.array([1,2,-1]), np.array([2,1,-1])]
+        ys = [1,-1]
+        
+        import pdb;pdb.set_trace()
         for _ in range(self.max_iters):
-            print self.hiddenWeights
-            self.updateWeights(X,y,sample_weight)
+            #print self.hiddenWeights
+            self.updateWeights(examples,ys,sample_weight)
         return
 
     def updateWeights(self, X, y, sample_weight=None):
@@ -56,8 +60,7 @@ class ArtificialNeuralNetwork(object):
             #print hiddenOutputs
             #Get all the outputs for the examples
             outputs = list()
-            for i in range(len(X)):
-                h = hiddenOutputs[i]
+            for h in hiddenOutputs:
                 outputSum = np.dot(h,self.outputWeights)
                 outputs.append(ArtificialNeuralNetwork.sigmoid(outputSum))
             
@@ -79,12 +82,15 @@ class ArtificialNeuralNetwork(object):
         toReturn = np.zeros((self.num_hidden),np.float)
         for j in range(self.num_hidden):
             toReturn[j] = ArtificialNeuralNetwork.sigmoid(np.dot(curExample,self.hiddenWeights[j]))
+        #print toReturn
         return toReturn
             
 
     def getOutputUpdates(self, hiddenOutputs, outputs, y):
         toReturn = list(self.gamma*self.outputWeights[i] for i in range(self.num_hidden))
         #initialize the list to the weight decay terms
+
+        
         for i in range(len(y)):
             yi = y[i]
             hn = outputs[i]
@@ -107,11 +113,13 @@ class ArtificialNeuralNetwork(object):
         return toReturn
 
     def applyUpdates(self, outputUpdates, hiddenUpdates):
+        
         for i in range(self.num_hidden):
-            self.outputWeights[i] -= 0.01*(outputUpdates[i])
+            self.outputWeights[i] -= self.learningRate*(outputUpdates[i])
         for i in range(self.numAttributes):
             for j in range(self.num_hidden):
-                self.hiddenWeights[j,i] -= 0.01*(hiddenUpdates[j,i] + self.gamma*self.hiddenWeights[j,i])
+                #print hiddenUpdates[j,i]
+                self.hiddenWeights[j,i] -= self.learningRate*(hiddenUpdates[j,i] + self.gamma*self.hiddenWeights[j,i])
         return
 
     def predict(self, X):
