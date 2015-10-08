@@ -89,27 +89,45 @@ def recall(labels, predictions):
             else:
                 fn += 1
     if tp == 0 and fn == 0:
-        return 0.0
+        return 1.0
     else:
         return float(tp)/(tp+fn)
 
 def auc(labels, predictions):
+    
     pairs = zip(labels, predictions)
+    #print pairs
     pairs.sort(key=lambda x: x[1])
-    split = float('-inf')
-    oldSplit = None
+    prevVal = pairs[0][1]
     rocVals = set()
-    for i in range(len(pairs)-1):
-        #print "%f    %f" % (oldSplit if oldSplit is not None else 0.0, split)
-        if oldSplit != split:
-            (fp,tp) = roc(pairs, split)
-            rocVals.add((fp,tp))
-        oldSplit = split
-        split = (pairs[i][1] + pairs[i+1][1])/2
-    rocVals.add(roc(pairs, float('inf')))
+    rocVals.add((0.0, 0.0))
+    rocVals.add((1.0, 1.0))
+
+    numTotal = len(labels)
+    #Intially, all example are >= the split (first split candidate is -inf), so the number of positve example GOE
+    # is just the number of all positive examples
+    numTP = len(filter(lambda x: x == 1, labels))
+    #Similarly, no exaples are < -inf, so there are no LT positive examples
+    numFN = 0
+    numFP = numTotal - numTP
+    prevPrediction = None
+    i = 0
+    for i in range(numTotal):
+        curLabel = pairs[i][0]
+        curPrediction = pairs[i][1]
+        if curLabel == 1:
+            numTP -= 1
+            numFN += 1
+        if curLabel == 0:
+            numFP -= 1
+        
+        if prevPrediction != curPrediction:
+            rocVals.add( ((float(numFP)/(numTP + numFP)), (float(numTP)/(numTP+numFN))) )
+        prevPrediction = curPrediction
+
     rocVals = list(rocVals)
     rocVals.sort(key=lambda x: x[0])
-    print rocVals
+    #print rocVals
     area = 0.0
     for i in range(len(rocVals)-1):
         (prevfp, prevtp) = rocVals[i]
@@ -119,16 +137,3 @@ def auc(labels, predictions):
         area += avg*h
 
     return area
-
-def roc(pairs, split):
-    labels = list()
-    predictions = list()
-    for (label, prediction) in pairs:
-        if prediction > split:
-            predictions.append(1)
-        else:
-            predictions.append(-1)
-        labels.append(label)
-    tp = recall(labels, predictions)
-    fp = 1 - precision(labels, predictions)
-    return (fp, tp)
